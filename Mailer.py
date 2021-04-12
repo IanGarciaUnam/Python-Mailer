@@ -58,7 +58,7 @@ class Sender_Improved:
 		self.server.starttls()#Protocolo de cifrado de datos
 		self.server.login(self.email, self.password)
 
-	def send_message(self, asunto, message, file, contacto):
+	def send_message(self, asunto, message, contacto, file=None,):
 		"""
 		Params:
 			asunto : Subject of the email 
@@ -85,17 +85,18 @@ class Sender_Improved:
 			server
 			"""
 			self.server.quit()
-
+"""
 file=sys.argv[1]
 contactos=["archivosian508@gmail.com", "gonzalezlin24@gmail.com", "canitogarciavazquez@gmail.com"]
 
 s= Sender_Improved("canitogarciavazquez@gmail.com","Maquinadeguerra2",contactos)
-mensaje= """<html><h1>  Espero que se vea cool</h1>
+mensaje= \"""<html><h1>  Espero que se vea cool</h1>
 	<body>Sí le sé </body>
 
- </html>"""
+ </html>\"""
 
 for contacto in contactos:
 	s.send_message("ENVÍO DE PRUEBA CON IMAGEN", mensaje, file, contacto)
 
 s.finalize()
+"""
