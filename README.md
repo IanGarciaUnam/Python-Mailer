@@ -5,5 +5,5 @@ It's necessary to able the smtp port of your current mail, the Mailer at this po
 
 ## Usage
  ======
- python main.py
+ python main.py file.xlxs
  ======

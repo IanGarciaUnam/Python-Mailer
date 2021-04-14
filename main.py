@@ -1,6 +1,9 @@
 from Mailer import Sender_Improved as Sender
 import xlrd
 import sys
+from tkinter import StringVar
+import tkinter as tk
+
 class Receiver:
 	"""
 	Class to get the data from user
@@ -36,10 +39,47 @@ class Receiver:
 		del agenda[0]#The first element will always be 'correo electrónico'
 		return agenda
 
+class Ventana:
+
+	def __init__(self):
+		self.ventana=tk.Tk()
+		self.ventana.geometry("600x200")
+		self.mail_label=tk.Label(self.ventana, text="Email")
+		self.mail_label.place(x=20, y=20)
+		self.email=tk.StringVar()
+		self.caja_email=tk.Entry(self.ventana,textvariable=self.email)
+		self.caja_email.place(x=100, y=20)
+		self.password_label=tk.Label(self.ventana, text="Password")
+		self.password_label.place(x=20, y=40)
+		self.password=tk.StringVar()
+		self.caja_password=tk.Entry(self.ventana,textvariable=self.password)
+		self.caja_password.place(x=100, y=40)
+		self.caja_password.config(show="*")
+		self.asunto_label=tk.Label(self.ventana, text="Asunto")
+		self.asunto_label.place(x=20, y=60)
+		self.asunto=tk.StringVar()
+		self.caja_asunto=tk.Entry(self.ventana, textvariable=self.asunto)
+		self.caja_asunto.place(x=100,y=60)
+		self.mensaje_label=tk.Label(self.ventana, text="Mensaje")
+		self.mensaje_label.place(x=20,y=80)
+		self.Mensaje=tk.StringVar()
+		self.text_caja=tk.Text(self.ventana, height=1, width=8)
+		#self.caja_mensaje=Entry(self.ventana, textvariable=self.Mensaje)
+		#self.caja_mensaje.place(x=100, y=80, height=100, width=100)
+		self.ventana.mainloop()
+
+
+
+
 
 if __name__=="__main__":
 	#file=sys.argv[2]
+	"""
 	xlxs=sys.argv[1]
 	r=Receiver("canitogarciavazquez@gmail.com", "Maquinadeguerra2", None,xlxs)
 	mensaje="hola me agradas"
 	r.send_message("Mensaje de Bienvenida",mensaje)
+	"""
+	#root=Tk()
+	Window=Ventana()
+	#root.mainloop()
