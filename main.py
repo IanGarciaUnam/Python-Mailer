@@ -1,7 +1,7 @@
 from Mailer import Sender_Improved as Sender
 import xlrd
 import sys
-from tkinter import StringVar
+from tkinter import StringVar, filedialog
 import tkinter as tk
 
 class Receiver:
@@ -43,7 +43,7 @@ class Ventana:
 
 	def __init__(self):
 		self.ventana=tk.Tk()
-		self.ventana.geometry("600x200")
+		self.ventana.geometry("800x400")
 		self.mail_label=tk.Label(self.ventana, text="Email")
 		self.mail_label.place(x=20, y=20)
 		self.email=tk.StringVar()
@@ -63,11 +63,29 @@ class Ventana:
 		self.mensaje_label=tk.Label(self.ventana, text="Mensaje")
 		self.mensaje_label.place(x=20,y=80)
 		self.Mensaje=tk.StringVar()
-		self.text_caja=tk.Text(self.ventana, height=1, width=8)
+		self.caja_texto=tk.Text(self.ventana,height=5, width=50)
+		self.scroll=tk.Scrollbar(self.ventana)
+		self.caja_texto.configure(yscrollcommand=self.scroll.set)
+		#self.caja_texto.pack(side=tk.BOTTOM)
+		self.caja_texto.place(x=100, y=80)
+		self.scroll.config(command=self.caja_texto.yview)
 		#self.caja_mensaje=Entry(self.ventana, textvariable=self.Mensaje)
 		#self.caja_mensaje.place(x=100, y=80, height=100, width=100)
+		self.boton_archivos=tk.Button(self.ventana, text="Abrir archivo", command=self.guardar_archivos)
+		self.boton_archivos.pack(side=tk.BOTTOM)
+		self.boton_enviar=tk.Button(self.ventana, text="Enviar", command=self.enviar)
+		self.boton_enviar.pack(side=tk.BOTTOM)
+		
 		self.ventana.mainloop()
 
+
+	def guardar_archivos(self):
+		self.files=tk.filedialog.askopenfilenames()
+		self.advertisement_label=tk.Label(self.ventana, text="File selected: "+str(self.files))
+		self.advertisement_label.place(x=100, y=200)
+	def enviar(self):
+		correo=self.caja_email.get()
+		print(correo)
 
 
 
