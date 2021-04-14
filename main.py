@@ -13,9 +13,11 @@ class Receiver:
 		self.nombres:list=self.get_data_from_xlxs(file_xlxs_path,2)
 
 	def send_message(self, asunto, message):
+		sender=Sender(self.main_mail, self.password, self.contactos)
 		for contacto in self.contactos:
 			sender.send_message(asunto, message, contacto, file=self.file)
 		sender.finalize()
+		print("Succesfully sent")
 
 	def get_data_from_xlxs(self, file_path, x):
 		"""
@@ -32,7 +34,7 @@ class Receiver:
 		for i in range(sheet.nrows):
 			agenda.append(str(sheet.cell_value(i,x)))#We have to acces to the column (1), and the row (i)
 		del agenda[0]#The first element will always be 'correo electrónico'
-		print(agenda)
+		return agenda
 
 
 if __name__=="__main__":
