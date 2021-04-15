@@ -20,8 +20,9 @@ class Receiver:
 		for contacto in self.contactos:
 			try:
 				sender.send_message(asunto, message, contacto, file=self.file)
-			except:
-				messagebox.info(message="Posible usuario erronéo: "+ contacto, title="Error en ejecución")
+			except e:
+				print(e)
+				messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="Error en ejecución")
 		sender.finalize()
 		print("Succesfully sent")
 
@@ -95,7 +96,7 @@ class Ventana:
 
 
 	def guardar_archivos(self):
-		self.files=tk.filedialog.askopenfilenames()
+		self.files=tk.filedialog.askopenfilename()
 		self.advertisement_label=tk.Label(self.ventana, text="File selected: "+str(self.files))
 		self.advertisement_label.place(x=100, y=200)
 
@@ -113,9 +114,9 @@ class Ventana:
 		if self.files==None:
 			if not messagebox.askyesno(message="¿Desea continuar?", title="No contiene archivo adjunto"):
 				return
-		r=Receiver(self.main_mail, self.password, self.files, self.xlxs)
+		r=Receiver(self.email, self.password, self.files, self.xlsx)
 		r.send_message(self.asunto, self.Mensaje)
-		r.messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
+		messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
 
 
 
