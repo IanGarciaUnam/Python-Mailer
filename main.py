@@ -1,12 +1,20 @@
 from Mailer import Sender_Improved as Sender
 import xlrd
 import sys
+import re
 from tkinter import StringVar, filedialog,messagebox
 import tkinter as tk
+import socket
 
 class Receiver:
 	"""
-	Class to get the data from user
+	Class to get the data from user, and connect with Sende_Improve from 
+	Mailer
+	Params: 
+		main_mail:str:Correo electrónico del remitente
+		password:str: Contraseña del remitente
+		file: Archivo adjunto, solo se permite uno por correo
+		file_xlxs_path:str: Ruta absoluta de la base de datos en formato xlsx
 	"""
 	def __init__(self, main_mail, password, file, file_xlxs_path):
 		self.file=file
@@ -14,14 +22,30 @@ class Receiver:
 		self.password=password
 		self.contactos:list=self.get_data_from_xlxs(file_xlxs_path, 1)
 		self.nombres:list=self.get_data_from_xlxs(file_xlxs_path,2)
+		if not self.es_correo_valido(self.main_mail):
+			messagebox.showerror("Error","Upssss!, Al parecer tu correo no es válido")
+			return
 
+	def es_correo_valido(self, correo):
+		expresion_regular = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
+		return re.match(expresion_regular, correo) is not None
+	
 	def send_message(self, asunto, message):
+		"""
+		ENvía los mensajes a cada correo electrónico, en caso de error, notifica la posiblidad de 
+		que alguno de los contactos sea incorrecto
+		Param:
+			message:str : Puede estar escrito en Html
+			asunto:str : Asunto del correo
+		"""
 		sender=Sender(self.main_mail, self.password, self.contactos)
 		for contacto in self.contactos:
+			if not self.es_correo_valido(contacto):
+				messagebox.showinfo(message="Usuario erronéo: "+ contacto+ " ,será omitido", title="Error en ejecución")
+				continue
 			try:
 				sender.send_message(asunto, message, contacto, file=self.file)
-			except e:
-				print(e)
+			except:
 				messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="Error en ejecución")
 		sender.finalize()
 		print("Succesfully sent")
@@ -46,7 +70,13 @@ class Receiver:
 class Ventana:
 
 	def __init__(self):
-		self.ventana=tk.Tk()
+		"""
+		Inicializa y defina la ventana por defecto, así como sus atributos
+		"""
+		if not self.net_connected():
+			messagebox.showwarning("Internet te extraña","Parece que no estás conectado a internet, verifica tu conexión :(, Mailer no podrá notificarte si es que los correo no logran ser entregados\n ")
+
+		self.ventana=tk.Tk(className="Mailer")
 		self.ventana.geometry("800x400")
 		self.mail_label=tk.Label(self.ventana, text="Email")
 		self.mail_label.place(x=20, y=20)
@@ -90,17 +120,29 @@ class Ventana:
 		self.ventana.mainloop()
 
 	def guardar_archivo_xlxs(self):
-		self.xlsx=tk.filedialog.askopenfilename(filetypes = (("xlsx files","*.xlsx"),("all files","*.*")))
-		self.advertisement_xlsx=tk.Label(self.ventana, text="BBDD selected: "+str(self.xlsx))
+		"""
+		Guarda la ruta absoluta de nuestro archivo bbdd, solo acepta archivos xlxs
+		"""
+		self.xlsx=tk.filedialog.askopenfilename(filetypes = (("xlsx files","*.xlsx"),("xlsx files","*.xlxs*")))
+		self.advertisement_xlsx=tk.Label(self.ventana, text="BBDD seleccionada: "+str(self.xlsx))
 		self.advertisement_xlsx.place(x=100, y=250)		
 
 
 	def guardar_archivos(self):
+		"""
+		Guarda la ruta absoluta de un archivo y notifica creando una etiqueta en la ventana
+		"""
 		self.files=tk.filedialog.askopenfilename()
-		self.advertisement_label=tk.Label(self.ventana, text="File selected: "+str(self.files))
+		self.advertisement_label=tk.Label(self.ventana, text="File seleccionada: "+str(self.files))
 		self.advertisement_label.place(x=100, y=200)
 
 	def enviar(self):
+		"""
+		Comportamiento designado tras presionar el boton enviar
+		forma un objeto receiver, verifica que los datos sean consistentes
+		,envía avisos en caso de no marcar las bbdd de referencia.
+		AL finalizar muestra un cuadro para notificar que todo fue correcto
+		"""
 		self.email=self.caja_email.get()
 		print("email: ", self.email)
 		self.password=self.caja_password.get()
@@ -114,9 +156,19 @@ class Ventana:
 		if self.files==None:
 			if not messagebox.askyesno(message="¿Desea continuar?", title="No contiene archivo adjunto"):
 				return
+
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
 		r.send_message(self.asunto, self.Mensaje)
 		messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
+
+	def net_connected(self):
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.settimeout(5)
+		try:
+			s.connect(("www.google.com", 80))
+		except (socket.gaierror, socket.timeout):
+			return False
+		return True
 
 
 
