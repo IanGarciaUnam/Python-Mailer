@@ -8,9 +8,9 @@ import socket
 
 class Receiver:
 	"""
-	Class to get the data from user, and connect with Sende_Improve from 
+	Class to get the data from user, and connect with Sende_Improve from
 	Mailer
-	Params: 
+	Params:
 		main_mail:str:Correo electrónico del remitente
 		password:str: Contraseña del remitente
 		file: Archivo adjunto, solo se permite uno por correo
@@ -29,15 +29,20 @@ class Receiver:
 	def es_correo_valido(self, correo):
 		expresion_regular = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
 		return re.match(expresion_regular, correo) is not None
-	
-	def send_message(self, asunto, message):
+
+	def send_message(self, asunto, message, ventana=None):
 		"""
-		ENvía los mensajes a cada correo electrónico, en caso de error, notifica la posiblidad de 
+		ENvía los mensajes a cada correo electrónico, en caso de error, notifica la posiblidad de
 		que alguno de los contactos sea incorrecto
 		Param:
 			message:str : Puede estar escrito en Html
 			asunto:str : Asunto del correo
 		"""
+		flag=False
+		if ventana!=None:
+			flag=True
+			etiqueta_contactos=tk.Label(ventana, text="Por enviar --")
+			etiqueta_contactos.place(x="100",y="300")
 		sender=Sender(self.main_mail, self.password, self.contactos)
 		for contacto in self.contactos:
 			if not self.es_correo_valido(contacto):
@@ -48,6 +53,8 @@ class Receiver:
 			except:
 				messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="Error en ejecución")
 		sender.finalize()
+		etiqueta_contactos=tk.Label(ventana, text="Proceso finalizado")
+		etiqueta_contactos.place(x="100",y="300")
 		print("Succesfully sent")
 
 	def get_data_from_xlxs(self, file_path, x):
@@ -56,7 +63,7 @@ class Receiver:
 		uses xlrd library
 			Param:
 				file_path: XLXS file path
-				x: 
+				x:
 		"""
 		agenda=[]
 		loc=str(file_path)
@@ -77,7 +84,7 @@ class Ventana:
 			messagebox.showwarning("Internet te extraña","Parece que no estás conectado a internet, verifica tu conexión :(, Mailer no podrá notificarte si es que los correo no logran ser entregados\n ")
 
 		self.ventana=tk.Tk(className="Mailer")
-		self.ventana.geometry("800x400")
+		self.ventana.geometry("800x500")
 		self.mail_label=tk.Label(self.ventana, text="Email")
 		self.mail_label.place(x=20, y=20)
 		self.email=None#tk.StringVar()
@@ -125,7 +132,7 @@ class Ventana:
 		"""
 		self.xlsx=tk.filedialog.askopenfilename(filetypes = (("xlsx files","*.xlsx"),("xlsx files","*.xlxs*")))
 		self.advertisement_xlsx=tk.Label(self.ventana, text="BBDD seleccionada: "+str(self.xlsx))
-		self.advertisement_xlsx.place(x=100, y=250)		
+		self.advertisement_xlsx.place(x=100, y=250)
 
 
 	def guardar_archivos(self):
@@ -144,7 +151,8 @@ class Ventana:
 		AL finalizar muestra un cuadro para notificar que todo fue correcto
 		"""
 		self.email=self.caja_email.get()
-		print("email: ", self.email)
+		messagebox.showinfo(message="Comenzando envíos", title="Proceso iniciado")
+		#print("email: ", self.email)
 		self.password=self.caja_password.get()
 		self.asunto=self.caja_asunto.get()
 		self.Mensaje=self.caja_texto.get("1.0","end-1c")
@@ -158,7 +166,7 @@ class Ventana:
 				return
 
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
-		r.send_message(self.asunto, self.Mensaje)
+		r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
 		messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
 
 	def net_connected(self):
@@ -174,7 +182,7 @@ class Ventana:
 
 
 
-		
+
 
 
 

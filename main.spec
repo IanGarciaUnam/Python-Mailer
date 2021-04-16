@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['/home/iangarcia/Documentos/Python_emailer'],
+             pathex=['C:\\Users\\canit\\Documents\\Development\\Python-Mailer'],
              binaries=[],
              datas=[],
              hiddenimports=[],
@@ -30,4 +30,4 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False )
+          console=False , icon='mailme.ico')
