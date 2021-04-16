@@ -3,7 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.encoders import encode_base64
-
+from tkinter import messagebox
 port= 465
 smtp_server = "smtp.gmail.com"
 
@@ -28,8 +28,14 @@ class Sender:
 
 		"""
 		with smtplib.SMTP_SSL(smtp_server, port, context=self.context) as server:
-			server.login(self.sender_email, self.password)
 			counter=0
+			try:
+				server.login(self.sender_email, self.password)
+			
+			except :
+				messagebox.showerror(title="Credenciales incorrectas", message="Tu correo o contraseña son incorrectos, a continuación se terminará el programa")
+				sys.exit(1)
+
 			for receiver in self.receivers_emails:
 				server.sendmail(self.sender_email, receiver, message)
 				counter+=1
@@ -56,7 +62,11 @@ class Sender_Improved:
 		self.contactos=contactos
 		self.server=smtplib.SMTP("smtp.gmail.com", 587)
 		self.server.starttls()#Protocolo de cifrado de datos
-		self.server.login(self.email, self.password)
+		try:
+			self.server.login(self.email, self.password)
+		except:
+			messagebox.showerror(title="Credenciales incorrectas", message="Tu correo o contraseña son incorrectos")
+			self.finalize()
 
 	def send_message(self, asunto, message, contacto, file=None,):
 		"""
