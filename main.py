@@ -21,7 +21,7 @@ class Receiver:
 		self.main_mail=main_mail
 		self.password=password
 		self.contactos:list=self.get_data_from_xlxs(file_xlxs_path, 1)
-		self.nombres:list=self.get_data_from_xlxs(file_xlxs_path,2)
+		#self.nombres:list=self.get_data_from_xlxs(file_xlxs_path,2)
 		if not self.es_correo_valido(self.main_mail):
 			messagebox.showerror("Error","Upssss!, Al parecer tu correo no es válido")
 			return
@@ -51,7 +51,10 @@ class Receiver:
 			try:
 				sender.send_message(asunto, message, contacto, file=self.file)
 			except:
-				messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="Error en ejecución")
+				if contacto == " ":
+					messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
+				else:
+					messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
 		sender.finalize()
 		etiqueta_contactos=tk.Label(ventana, text="Proceso finalizado")
 		etiqueta_contactos.place(x="100",y="300")
@@ -70,8 +73,15 @@ class Receiver:
 		wb=xlrd.open_workbook(loc)
 		sheet = wb.sheet_by_index(0)#Sheet file
 		for i in range(sheet.nrows):
-			agenda.append(str(sheet.cell_value(i,x)))#We have to acces to the column (1), and the row (i)
-		del agenda[0]#The first element will always be 'correo electrónico'
+			try:
+				agenda.append(str(sheet.cell_value(i,x)))#We have to acces to the column (1), and the row (i)
+			except:
+				messagebox.showerror(title="Campos vacíos (ERROR)", message="Al parecer la base de datos contiene espacios vacíos, imposible procesar")
+		if len(agenda)<1:
+			messagebox.showerror(title="Base de datos vacía", message="Verifica que tu base de datos no este vacía, y que los correos eléctrónicos se ubiquen en la columna 1 y despues de la fila 1")
+			return
+		else:
+			del agenda[0]#The first element will always be 'correo electrónico'
 		return agenda
 
 class Ventana:
