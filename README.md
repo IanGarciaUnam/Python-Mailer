@@ -27,20 +27,20 @@ Just go to the directory dist, and apply double click in
 ´´´
 main.exe
 ´´´
-The option --abrir archivo--, will let you to chose a file to attach at the mail, just one for each email.
+The option --Adjuntar archivo--, will let you to chose a file to attach at the mail, just one for each email.
 The option --abrir base de datos-- will only leave you to select an xlsx format file, be sure that in the 2nd column, commonly known as B are located the emails. Mailer will only read the 1st sheet of the file.
 
 ##Requirements
-*Your email should be type Gmail.
+*Your email ought to be type Gmail.
 
 *Be sure to configure your email with:
  https://www.google.com/settings/security/lesssecureapps
  ==========================================================
                           Español
- ==========================================================
+
  Para Windows
- *Dirigete a la carpeta dist/
- *Da doble click en main.exe
+ **Dirigete a la carpeta dist/
+ **Da doble click en main.exe
  Tras llenar todos los campos requeridos (Es necesario llenar todos los campos)
 
  **Para adjuntar un archivo da click en el botón, abrir archivo, seleccionalo, y en la ventana principal quedará anexada la ruta absoluta de dicho archivo indicando que ha sido agregada, este paso es opcional

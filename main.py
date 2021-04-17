@@ -44,6 +44,11 @@ class Receiver:
 			etiqueta_contactos=tk.Label(ventana, text="Por enviar --")
 			etiqueta_contactos.place(x="100",y="300")
 		sender=Sender(self.main_mail, self.password, self.contactos)
+		self.contactos=sender.contactos
+		if self.contactos==None:
+			messagebox.showerror("Credenciales inválidas", "Correo o contraseñas incorrectas, tus correos no pueden ser enviados")
+			return
+
 		for contacto in self.contactos:
 			if not self.es_correo_valido(contacto):
 				messagebox.showinfo(message="Usuario erronéo: "+ contacto+ " ,será omitido", title="Error en ejecución")
@@ -122,7 +127,7 @@ class Ventana:
 		self.scroll.config(command=self.caja_texto.yview)
 		#self.caja_mensaje=Entry(self.ventana, textvariable=self.Mensaje)
 		#self.caja_mensaje.place(x=100, y=80, height=100, width=100)
-		self.boton_archivos=tk.Button(self.ventana, text="Abrir archivo", command=self.guardar_archivos)
+		self.boton_archivos=tk.Button(self.ventana, text="Adjuntar archivo", command=self.guardar_archivos)
 		self.boton_archivos.pack(side=tk.BOTTOM)
 
 		self.boton_guardar_xlxs=tk.Button(self.ventana, text="Abrir Base de Datos", command=self.guardar_archivo_xlxs)
@@ -150,7 +155,7 @@ class Ventana:
 		Guarda la ruta absoluta de un archivo y notifica creando una etiqueta en la ventana
 		"""
 		self.files=tk.filedialog.askopenfilename()
-		self.advertisement_label=tk.Label(self.ventana, text="File seleccionada: "+str(self.files))
+		self.advertisement_label=tk.Label(self.ventana, text="Archivo adjunto: "+str(self.files))
 		self.advertisement_label.place(x=100, y=200)
 
 	def enviar(self):
@@ -177,7 +182,8 @@ class Ventana:
 
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
 		r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
-		messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
+		if r.contactos!=None:
+			messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
 
 	def net_connected(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

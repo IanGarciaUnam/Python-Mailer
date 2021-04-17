@@ -66,6 +66,7 @@ class Sender_Improved:
 			self.server.login(self.email, self.password)
 		except:
 			messagebox.showerror(title="Credenciales incorrectas", message="Tu correo o contraseña son incorrectos")
+			self.contactos=None
 			self.finalize()
 
 	def send_message(self, asunto, message, contacto, file=None,):
