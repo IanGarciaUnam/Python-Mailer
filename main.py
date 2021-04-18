@@ -5,6 +5,7 @@ import re
 from tkinter import StringVar, filedialog,messagebox
 import tkinter as tk
 import socket
+import os
 
 class Receiver:
 	"""
@@ -173,13 +174,12 @@ class Ventana:
 		self.Mensaje=self.caja_texto.get("1.0","end-1c")
 		if self.email=="" or self.password=="" or self.asunto=="" or self.Mensaje=="":
 			messagebox.showerror(title="Campos vacíos", message="Algunos de los campos principales están vacíos, verifica \n IMPOSIBLE ENVIAR")
-		if self.xlsx == None:
+		if self.xlsx == None or not os.path.isfile(self.xlsx):
 			messagebox.showerror(title="Campos vacíos", message="Base de datos no seleccionada, verifique que sea en formato .xlxs")
 			return
 		if self.files==None:
-			if not messagebox.askyesno(message="¿Desea continuar?", title="No contiene archivo adjunto"):
+			if not messagebox.askyesno(message="No contiene archivo adjunto¿Desea continuar?", title="Aviso"):
 				return
-
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
 		r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
 		if r.contactos!=None:

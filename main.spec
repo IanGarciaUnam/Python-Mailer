@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['main.py'],
-             pathex=['/home/iangarcia/Documentos/Python_emailer'],
+             pathex=['C:\\Users\\canit\\Documents\\Development\\Python-Mailer'],
              binaries=[],
              datas=[],
              hiddenimports=[],
