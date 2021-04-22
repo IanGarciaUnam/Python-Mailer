@@ -2,10 +2,12 @@ from Mailer import Sender_Improved as Sender
 import xlrd
 import sys
 import re
-from tkinter import StringVar, filedialog,messagebox
+from tkinter import StringVar, filedialog,messagebox,ttk
 import tkinter as tk
+import threading
 import socket
 import os
+import time
 
 class Receiver:
 	"""
@@ -31,7 +33,7 @@ class Receiver:
 		expresion_regular = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
 		return re.match(expresion_regular, correo) is not None
 
-	def send_message(self, asunto, message, ventana=None):
+	def send_message(self, asunto, message, ventana):
 		"""
 		ENvía los mensajes a cada correo electrónico, en caso de error, notifica la posiblidad de
 		que alguno de los contactos sea incorrecto
@@ -39,31 +41,40 @@ class Receiver:
 			message:str : Puede estar escrito en Html
 			asunto:str : Asunto del correo
 		"""
-		flag=False
-		if ventana!=None:
-			flag=True
-			etiqueta_contactos=tk.Label(ventana, text="Por enviar --")
-			etiqueta_contactos.place(x="100",y="300")
+		#barraprogressbar.configure(maximum=len(self.contactos))
+		maximale=len(self.contactos)
+		self.flag=False
+			#etiqueta_contactos=tk.Label(ventana, text="Por enviar --")
+			#etiqueta_contactos.place(x="100",y="300")
 		sender=Sender(self.main_mail, self.password, self.contactos)
 		self.contactos=sender.contactos
 		if self.contactos==None:
 			messagebox.showerror("Credenciales inválidas", "Correo o contraseñas incorrectas, tus correos no pueden ser enviados")
 			return
-
+		contador=0
+		
 		for contacto in self.contactos:
-			if not self.es_correo_valido(contacto):
-				messagebox.showinfo(message="Usuario erronéo: "+ contacto+ " ,será omitido", title="Error en ejecución")
-				continue
-			try:
-				sender.send_message(asunto, message, contacto, file=self.file)
-			except:
-				if contacto == " ":
-					messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
-				else:
-					messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
+			if contador%50==0 and contador>0:
+				sender.finalize()
+				#time.sleep(300)
+				sender=Sender(self.main_mail, self.password, self.contactos)
+			
+			#try:
+			#sender.send_message(asunto, message, contacto, file=self.file)
+			print(contacto, contador)
+			self.contactos.remove(contacto)
+			#except:
+				#if contacto == " ":
+					#messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
+				#else:
+					#messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
+			contador+=1
 		sender.finalize()
-		etiqueta_contactos=tk.Label(ventana, text="Proceso finalizado")
+		if maximale<=contador:
+			self.flag=True
+		etiqueta_contactos=tk.Label(ventana, text="Proceso finalizado, mensajes enviados: "+str(contador))
 		etiqueta_contactos.place(x="100",y="300")
+		messagebox.showinfo(message="Mensajes enviados exitosamente", title="Proceso finalizado")
 		print("Succesfully sent")
 
 	def get_data_from_xlxs(self, file_path, x):
@@ -140,7 +151,10 @@ class Ventana:
 		self.files=None
 		self.advertisement_xlsx=None
 		self.advertisement_label=None
-		self.ventana.mainloop()
+		self.progressbar=ttk.Progressbar(self.ventana, mode="indeterminate")
+		self.progressbar.place(x=20, y=180, width=200)
+		self.ventana.mainloop()#Cualquier elemento debe ser agregado previo a esta instrucción
+
 
 	def guardar_archivo_xlxs(self):
 		"""
@@ -174,16 +188,31 @@ class Ventana:
 		self.Mensaje=self.caja_texto.get("1.0","end-1c")
 		if self.email=="" or self.password=="" or self.asunto=="" or self.Mensaje=="":
 			messagebox.showerror(title="Campos vacíos", message="Algunos de los campos principales están vacíos, verifica \n IMPOSIBLE ENVIAR")
+			return
 		if self.xlsx == None or not os.path.isfile(self.xlsx):
 			messagebox.showerror(title="Campos vacíos", message="Base de datos no seleccionada, verifique que sea en formato .xlxs")
 			return
 		if self.files==None:
 			if not messagebox.askyesno(message="No contiene archivo adjunto¿Desea continuar?", title="Aviso"):
 				return
+	
+		#self.contador_etiqueta=tk.Label(self.ventana, text="Comienzan envíos")
+		#self.contador_etiqueta.place(x="100",y="300")
+		#self.progressbar.start()
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
-		r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
-		if r.contactos!=None:
-			messagebox.showinfo(message="Mensaje enviado a cada contacto con éxito", title="Proceso finalizado")
+		#r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
+		#t2=threading.Thread(target=self.progressbar.start)
+		#t2.start()
+		self.progressbar.start()
+		t1=threading.Thread(target=r.send_message, args=(self.asunto, self.Mensaje, self.ventana))
+		t1.start()
+		print(t1.is_alive())
+		if r.flag:
+			self.progressbar.stop()
+			return
+			#t3=threading.Thread(target=self.progressbar.stop)
+			#t3.start()
+		#self.progressbar.stop()
 
 	def net_connected(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
