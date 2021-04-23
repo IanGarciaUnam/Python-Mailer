@@ -8,7 +8,7 @@ import threading
 import socket
 import os
 import time
-
+from io import open
 class Receiver:
 	"""
 	Class to get the data from user, and connect with Sende_Improve from
@@ -33,7 +33,7 @@ class Receiver:
 		expresion_regular = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
 		return re.match(expresion_regular, correo) is not None
 
-	def send_message(self, asunto, message, ventana):
+	def send_message(self, asunto, message, ventana, progressbar:ttk.Progressbar):
 		"""
 		ENvía los mensajes a cada correo electrónico, en caso de error, notifica la posiblidad de
 		que alguno de los contactos sea incorrecto
@@ -41,41 +41,63 @@ class Receiver:
 			message:str : Puede estar escrito en Html
 			asunto:str : Asunto del correo
 		"""
-		#barraprogressbar.configure(maximum=len(self.contactos))
-		maximale=len(self.contactos)
-		self.flag=False
-			#etiqueta_contactos=tk.Label(ventana, text="Por enviar --")
-			#etiqueta_contactos.place(x="100",y="300")
+		MAXIMALE=len(self.contactos)
 		sender=Sender(self.main_mail, self.password, self.contactos)
 		self.contactos=sender.contactos
 		if self.contactos==None:
 			messagebox.showerror("Credenciales inválidas", "Correo o contraseñas incorrectas, tus correos no pueden ser enviados")
 			return
 		contador=0
-		
+		self.cantidad_de_perdidos=0
+		self.perdidos=""
 		for contacto in self.contactos:
+			if not self.es_correo_valido(contacto):
+				self.perdidos+=contacto+"\n"
+				self.cantidad_de_perdidos+=1
+				continue
+
 			if contador%50==0 and contador>0:
 				sender.finalize()
-				#time.sleep(300)
+				time.sleep(300)
 				sender=Sender(self.main_mail, self.password, self.contactos)
 			
-			#try:
-			#sender.send_message(asunto, message, contacto, file=self.file)
-			print(contacto, contador)
-			self.contactos.remove(contacto)
-			#except:
-				#if contacto == " ":
-					#messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
-				#else:
-					#messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
+			if contador%10==0:
+				progressbar['value']=((contador*200)/MAXIMALE)
+				ventana.update_idletasks()
+				time.sleep(1)
+			try:
+				sender.send_message(asunto, message, contacto, file=self.file)
+				#print(contacto, contador)
+				self.contactos.remove(contacto)
+			except:
+				if contacto == " ":
+					messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
+				else:
+					messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
+			#print(contador)
 			contador+=1
+		progressbar['value']=100
+		ventana.update_idletasks()
+		time.sleep(1)
 		sender.finalize()
-		if maximale<=contador:
-			self.flag=True
 		etiqueta_contactos=tk.Label(ventana, text="Proceso finalizado, mensajes enviados: "+str(contador))
 		etiqueta_contactos.place(x="100",y="300")
 		messagebox.showinfo(message="Mensajes enviados exitosamente", title="Proceso finalizado")
+
+		if self.cantidad_de_perdidos>0:
+			messagebox.showinfo(message="Un total de"+str(self.cantidad_de_perdidos)+"contactos no localizables, el reporte correspondiente será escrito", title="Sobre contactos perdidos")
+			self.write_report(self.perdidos)
 		print("Succesfully sent")
+	def write_report(self, content):
+		"""
+		Write a report in txt
+			Param: 
+				content=Lecture gotten
+		"""
+		textfile=open("Report.txt", "w")
+		textfile.write(content)
+		textfile.close()
+
 
 	def get_data_from_xlxs(self, file_path, x):
 		"""
@@ -109,7 +131,6 @@ class Ventana:
 		"""
 		if not self.net_connected():
 			messagebox.showwarning("Internet te extraña","Parece que no estás conectado a internet, verifica tu conexión :(, Mailer no podrá notificarte si es que los correo no logran ser entregados\n ")
-
 		self.ventana=tk.Tk(className="Mailer")
 		self.ventana.geometry("800x500")
 		self.mail_label=tk.Label(self.ventana, text="Email")
@@ -134,25 +155,22 @@ class Ventana:
 		self.caja_texto=tk.Text(self.ventana,height=5, width=50)
 		self.scroll=tk.Scrollbar(self.ventana)
 		self.caja_texto.configure(yscrollcommand=self.scroll.set)
-		#self.caja_texto.pack(side=tk.BOTTOM)
 		self.caja_texto.place(x=100, y=80)
 		self.scroll.config(command=self.caja_texto.yview)
-		#self.caja_mensaje=Entry(self.ventana, textvariable=self.Mensaje)
-		#self.caja_mensaje.place(x=100, y=80, height=100, width=100)
 		self.boton_archivos=tk.Button(self.ventana, text="Adjuntar archivo", command=self.guardar_archivos)
 		self.boton_archivos.pack(side=tk.BOTTOM)
-
 		self.boton_guardar_xlxs=tk.Button(self.ventana, text="Abrir Base de Datos", command=self.guardar_archivo_xlxs)
 		self.boton_guardar_xlxs.pack(side=tk.BOTTOM)
-
 		self.boton_enviar=tk.Button(self.ventana, text="Enviar", command=self.enviar)
 		self.boton_enviar.pack(side=tk.BOTTOM)
 		self.xlsx=None
 		self.files=None
 		self.advertisement_xlsx=None
 		self.advertisement_label=None
-		self.progressbar=ttk.Progressbar(self.ventana, mode="indeterminate")
-		self.progressbar.place(x=20, y=180, width=200)
+		self.progreso_label=tk.Label(self.ventana, text="Progreso")
+		self.progreso_label.place(x=20, y=180)
+		self.progressbar=ttk.Progressbar(self.ventana,length=100, mode="determinate")
+		self.progressbar.place(x=100, y=180, width=300)
 		self.ventana.mainloop()#Cualquier elemento debe ser agregado previo a esta instrucción
 
 
@@ -195,21 +213,13 @@ class Ventana:
 		if self.files==None:
 			if not messagebox.askyesno(message="No contiene archivo adjunto¿Desea continuar?", title="Aviso"):
 				return
-	
-		#self.contador_etiqueta=tk.Label(self.ventana, text="Comienzan envíos")
-		#self.contador_etiqueta.place(x="100",y="300")
-		#self.progressbar.start()
+		self.contador_etiqueta=tk.Label(self.ventana, text="Comienzan envíos")
+		self.contador_etiqueta.place(x="100",y="300")
 		r=Receiver(self.email, self.password, self.files, self.xlsx)
-		#r.send_message(self.asunto, self.Mensaje, ventana=self.ventana)
-		#t2=threading.Thread(target=self.progressbar.start)
-		#t2.start()
-		self.progressbar.start()
-		t1=threading.Thread(target=r.send_message, args=(self.asunto, self.Mensaje, self.ventana))
-		t1.start()
-		print(t1.is_alive())
-		if r.flag:
-			self.progressbar.stop()
-			return
+		r.send_message(self.asunto, self.Mensaje, self.ventana, self.progressbar)
+
+
+		return
 			#t3=threading.Thread(target=self.progressbar.stop)
 			#t3.start()
 		#self.progressbar.stop()
@@ -233,13 +243,4 @@ class Ventana:
 
 
 if __name__=="__main__":
-	#file=sys.argv[2]
-	"""
-	xlxs=sys.argv[1]
-	r=Receiver("canitogarciavazquez@gmail.com", "Maquinadeguerra2", None,xlxs)
-	mensaje="hola me agradas"
-	r.send_message("Mensaje de Bienvenida",mensaje)
-	"""
-	#root=Tk()
 	Window=Ventana()
-	#root.mainloop()
