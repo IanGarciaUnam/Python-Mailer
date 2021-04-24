@@ -9,6 +9,7 @@ import socket
 import os
 import time
 from io import open
+from validate_email import validate_email
 class Receiver:
 	"""
 	Class to get the data from user, and connect with Sende_Improve from
@@ -30,8 +31,7 @@ class Receiver:
 			return
 
 	def es_correo_valido(self, correo):
-		expresion_regular = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"
-		return re.match(expresion_regular, correo) is not None
+		return validate_email(correo) and "@" in correo
 
 	def send_message(self, asunto, message, ventana, progressbar:ttk.Progressbar):
 		"""
@@ -43,39 +43,41 @@ class Receiver:
 		"""
 		MAXIMALE=len(self.contactos)
 		sender=Sender(self.main_mail, self.password, self.contactos)
-		self.contactos=sender.contactos
+
 		if self.contactos==None:
 			messagebox.showerror("Credenciales inválidas", "Correo o contraseñas incorrectas, tus correos no pueden ser enviados")
 			return
-		contador=0
 		self.cantidad_de_perdidos=0
-		self.perdidos=""
-		for contacto in self.contactos:
-			if not self.es_correo_valido(contacto):
-				self.perdidos+=contacto+"\n"
+		self.perdidos=""	
+		contador:int=0
+		for i in range(len(self.contactos)):
+			if not self.es_correo_valido(self.contactos[i]):
+				self.perdidos+=self.contactos[i]+"\n"
 				self.cantidad_de_perdidos+=1
 				continue
-
-			if contador%50==0 and contador>0:
+			if i%50==0 and i>0:
 				sender.finalize()
 				time.sleep(300)
 				sender=Sender(self.main_mail, self.password, self.contactos)
 			
-			if contador%10==0:
-				progressbar['value']=((contador*200)/MAXIMALE)
+			if i%10==0:
+				progressbar['value']=((i*100)/MAXIMALE)# 200==100
 				ventana.update_idletasks()
 				time.sleep(1)
-			try:
-				sender.send_message(asunto, message, contacto, file=self.file)
-				#print(contacto, contador)
-				self.contactos.remove(contacto)
-			except:
-				if contacto == " ":
-					messagebox.showinfo(message="Usuario vacío", title="Error en adquisición")
-				else:
-					messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ contacto, title="adquisición")
-			#print(contador)
 			contador+=1
+			try:
+				#print(self.contactos[i],i)
+				sender.send_message(asunto, message, self.contactos[i], file=self.file)
+			except:
+				if self.contactos[i] == " ":
+					messagebox.showinfo(message="Usuario vacío en casilla "+str(i+2) , title="Error en adquisición")
+					self.perdidos+="Casilla vacía: "+str(i+2)
+					self.cantidad_de_perdidos+=1
+				else:
+					messagebox.showinfo(message="Archivo erroneo ó Posible usuario erronéo: "+ self.contactos[i], title="adquisición")
+					self.perdidos+=str(self.contactos[i])
+					self.cantidad_de_perdidos+=1
+
 		progressbar['value']=100
 		ventana.update_idletasks()
 		time.sleep(1)
@@ -85,9 +87,10 @@ class Receiver:
 		messagebox.showinfo(message="Mensajes enviados exitosamente", title="Proceso finalizado")
 
 		if self.cantidad_de_perdidos>0:
-			messagebox.showinfo(message="Un total de"+str(self.cantidad_de_perdidos)+"contactos no localizables, el reporte correspondiente será escrito", title="Sobre contactos perdidos")
+			messagebox.showinfo(message="Un total de "+str(self.cantidad_de_perdidos)+" contactos no localizables, el reporte correspondiente será escrito", title="Sobre contactos perdidos")
 			self.write_report(self.perdidos)
 		print("Succesfully sent")
+
 	def write_report(self, content):
 		"""
 		Write a report in txt
